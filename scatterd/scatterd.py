@@ -129,11 +129,7 @@ def scatterd(x, y, z=None, s=50, c=[0, 0, 0], labels=None, marker=None, alpha=No
     if ax is None:
         # fig, ax = plt.subplots(figsize=figsize)
         fig = plt.figure(figsize=figsize)
-        if z is None:
-            ax = fig.add_subplot()
-        else:
-            ax = fig.add_subplot(projection='3d')
-
+        ax = fig.add_subplot() if z is None else fig.add_subplot(projection='3d')
     uilabels = np.unique(labels)
     for label in uilabels:
         Iloc = label==labels
@@ -197,7 +193,7 @@ def set_colors(X, labels, fontcolor, c, cmap, gradient=None):
     # Create unqiue colors for labels
     if len(np.unique(labels))>1:
         c_rgb, _ = colourmap.fromlist(labels, cmap=cmap, method='matplotlib', gradient=gradient)
-    elif len(c)==3 and (isinstance(c[0], int) or isinstance(c[0], float)):
+    elif len(c) == 3 and isinstance(c[0], (int, float)):
         c_rgb = np.repeat([c], X.shape[0], axis=0).reshape(-1, 3)
     elif len(c)==1 and isinstance(c, list):
         c_rgb = np.repeat(c[0], X.shape[0], axis=0).reshape(-1, 3)
@@ -250,10 +246,7 @@ def gradient_on_density_color(X, c_rgb, labels):
 # %% Fontcolor
 def _preprocessing(x, y, z, labels, norm=False):
     # Combine into array
-    if z is not None:
-        X = np.c_[x, y, z]
-    else:
-        X = np.c_[x, y]
+    X = np.c_[x, y, z] if z is not None else np.c_[x, y]
     # Normalize data
     if norm:
         X = _normalize(X)
@@ -277,18 +270,16 @@ def _fontcolor(fontcolor, label, X, cmap, verbose=3):
         fontcolor = {np.unique(label)[0]: [0, 0, 0]}
     elif (fontcolor is None) and (len(np.unique(label))==1):
         pass
-    elif (fontcolor is not None) and (len(fontcolor)==3 or len(fontcolor)==1):
-        fontcolor_dict = {}
-        for lab in np.unique(label):
-            fontcolor_dict[lab]=fontcolor
+    elif fontcolor is not None and len(fontcolor) in {3, 1}:
+        fontcolor_dict = {lab: fontcolor for lab in np.unique(label)}
         fontcolor=fontcolor_dict
     elif (fontcolor is not None) and (label is None):
         if verbose>=2: print('[scatterd] >Warning : Without label, there is no font(color) to print.')
-    elif (fontcolor is None) and (label is not None):
+    elif fontcolor is None:
         _, fontcolor = colourmap.fromlist(label, cmap=cmap, method='matplotlib')
-    elif (fontcolor is not None) and (label is not None) and (len(fontcolor)==X.shape[0]):
+    elif len(fontcolor) == X.shape[0]:
         _, fontcolor = colourmap.fromlist(fontcolor, cmap=cmap, method='matplotlib')
-    elif (fontcolor is not None) and (label is not None) and ((isinstance(fontcolor[0], int)) or (isinstance(fontcolor[0], float))):
+    elif isinstance(fontcolor[0], (int, float)):
         _, tmpcolors = colourmap.fromlist(label, cmap=cmap, method='matplotlib')
         # list(map(lambda x: tmpcolors.update({x: fontcolor}), [*tmpcolors.keys()]))
         fontcolor = tmpcolors
@@ -339,15 +330,16 @@ def import_example(data='cancer', url=None, sep=',', verbose=3):
 
     # Check file exists.
     if not os.path.isfile(PATH_TO_DATA):
-        if verbose>=3: print('Downloading [%s] dataset from github source..' %(data))
+        if verbose>=3:
+            print(f'Downloading [{data}] dataset from github source..')
         wget(url, PATH_TO_DATA)
 
     # Import local dataset
-    if verbose>=3: print('Import dataset [%s]' %(data))
+    if verbose>=3:
+        print(f'Import dataset [{data}]')
 
-    df = pd.read_csv(PATH_TO_DATA, sep=sep)
     # Return
-    return df
+    return pd.read_csv(PATH_TO_DATA, sep=sep)
 
 
 # %% Download files from github source
